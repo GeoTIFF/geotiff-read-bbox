@@ -36,6 +36,10 @@ const result = await readBoundingBox({
 result will look like the following
 ```javascript
 {
+  srs_of_geotiff: 32615,
+  read_bbox: [ 271940.8, 3201512.8000000003, 274126.4, 3203687.2 ],
+  height: 2718,
+  width: 2732,
   data: [
     Uint8Array(7425576) [
       140, 141, 141, 141, 140, 139, 139, 140, 139, 139, 140, 140,
@@ -54,10 +58,6 @@ result will look like the following
     ],
     width: 2732,
     height: 2718
-  ],
-  srs_of_geotiff: 32615,
-  read_bbox: [ 271940.8, 3201512.8000000003, 274126.4, 3203687.2 ],
-  height: 2718,
-  width: 2732
+  ]
 }
 ```

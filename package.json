@@ -1,0 +1,42 @@
+{
+  "name": "geotiff-read-bbox",
+  "version": "0.0.0",
+  "description": "Read Pixel Values from a GeoTIFF within a Bounding Box in almost any Projection",
+  "main": "index.js",
+  "files": [
+    "index.js"
+  ],
+  "scripts": {
+    "format": "npx prettier --arrow-parens=avoid --print-width=120 --write *.js",
+    "test": "node test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GeoTIFF/geotiff-read-bbox.git"
+  },
+  "keywords": [
+    "bbox",
+    "boundingbox",
+    "clip",
+    "geotiff",
+    "imagery",
+    "project",
+    "proj4",
+    "satellite",
+    "raster",
+    "read"
+  ],
+  "author": "Daniel J. Dufour",
+  "license": "CC0-1.0",
+  "bugs": {
+    "url": "https://github.com/GeoTIFF/geotiff-read-bbox/issues"
+  },
+  "homepage": "https://github.com/GeoTIFF/geotiff-read-bbox#readme",
+  "dependencies": {
+    "reproject-bbox": "^0.0.1"
+  },
+  "devDependencies": {
+    "flug": "^1.0.1",
+    "geotiff": "^1.0.4"
+  }
+}
