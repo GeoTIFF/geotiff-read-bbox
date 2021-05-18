@@ -18,11 +18,10 @@ const readBoundingBox = require("geotiff-read-bbox");
 
 const url = "https://s3-us-west-2.amazonaws.com/planet-disaster-data/hurricane-harvey/SkySat_Freeport_s03_20170831T162740Z3.tif";
 const geotiff = await GeoTIFF.fromUrl(url);
-const bbox = [-95.33935546875, 28.92163128242129, -95.3173828125, 28.940861769405547];
 
 const result = await readBoundingBox({
   // bounding box in [xmin, ymin, xmax, ymax] format
-  bbox,
+  bbox: [-95.33935546875, 28.92163128242129, -95.3173828125, 28.940861769405547],
 
   // set debug to true for increased logging
   debug: false,
