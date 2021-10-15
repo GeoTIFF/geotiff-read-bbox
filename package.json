@@ -7,7 +7,7 @@
     "index.js"
   ],
   "scripts": {
-    "format": "npx prettier --arrow-parens=avoid --print-width=120 --write *.js",
+    "format": "npx prettier --arrow-parens=avoid --print-width=120 --trailing-comma=none --write *.js",
     "test": "node test.js"
   },
   "repository": {
@@ -32,11 +32,12 @@
     "url": "https://github.com/GeoTIFF/geotiff-read-bbox/issues"
   },
   "homepage": "https://github.com/GeoTIFF/geotiff-read-bbox#readme",
-  "dependencies": {
-    "reproject-bbox": "^0.0.1"
-  },
   "devDependencies": {
-    "flug": "^1.0.1",
-    "geotiff": "^1.0.4"
+    "flug": "^2.1.0",
+    "geotiff": "^1.0.8"
+  },
+  "dependencies": {
+    "reproject-bbox": "^0.1.0",
+    "snap-bbox": "^0.2.0"
   }
 }

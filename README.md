@@ -23,23 +23,52 @@ const result = await readBoundingBox({
   // bounding box in [xmin, ymin, xmax, ymax] format
   bbox: [-95.33935546875, 28.92163128242129, -95.3173828125, 28.940861769405547],
 
-  // set debug to true for increased logging
-  debug: false,
+  // set debugLevel to zero for no logging, and higher for more logging
+  debugLevel: 1,
 
   // spatial reference system of the bounding box
   srs: 4326,
 
   // tiff object created by using the geotiff.js library
-  geotiff
+  geotiff,
+
+  // default to false
+  // whether it's okay to use a lower-resolution overview image
+  use_overview: true,
+
+  // use with use_overview
+  // sets the desired size of the clipped pixels
+  // useful if you are trying to generate an image
+  // at a resolution lower than that of the highest-resolution image 
+  target_height: 256,
+  target_width: 256
 });
 ```
 result will look like the following
 ```javascript
 {
   srs_of_geotiff: 32615,
+
+  // bounding box of read result
   read_bbox: [ 271940.8, 3201512.8000000003, 274126.4, 3203687.2 ],
+
+  // actual bbox of pixels read from the GeoTIFF
+  // in [left, top, right, bottom]
+  // with top left corner as origin [0, 0]
+  read_window: [1938, 2517, 2280, 2177],
+
+  // index of tiff image used
+  // zero is raw/highest-resolution value
+  // 1 and higher are overviews
+  // with the highest being the lowest resolution 
+  selected_image_index: 4,
+
+  // height of read result in pixels
   height: 2718,
+
+  // width of read result in pixels
   width: 2732,
+
   data: [
     Uint8Array(7425576) [
       140, 141, 141, 141, 140, 139, 139, 140, 139, 139, 140, 140,
