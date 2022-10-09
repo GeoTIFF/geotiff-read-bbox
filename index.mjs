@@ -1,7 +1,16 @@
-const reprojectBoundingBox = require("reproject-bbox");
-const snap = require("snap-bbox");
+import getSRS from "geotiff-epsg-code";
+import reprojectBoundingBox from "reproject-bbox";
+import snap from "snap-bbox";
 
-module.exports = async ({ bbox, debugLevel = 0, geotiff, srs, use_overview = false, target_height, target_width }) => {
+export default async function ({
+  bbox,
+  debugLevel = 0,
+  geotiff,
+  srs,
+  use_overview = false,
+  target_height,
+  target_width
+}) {
   if (debugLevel >= 1) console.time("[geotiff-read-bbox]");
   if (debugLevel >= 2) console.time("[geotiff-read-bbox] getting first image");
   const image = await geotiff.getImage();
@@ -24,7 +33,7 @@ module.exports = async ({ bbox, debugLevel = 0, geotiff, srs, use_overview = fal
 
   const { geoKeys } = image;
   if (debugLevel >= 2) console.log("[geotiff-read-bbox] geoKeys:", geoKeys);
-  const srs_of_geotiff = geoKeys.GeographicTypeGeoKey || geoKeys.ProjectedCSTypeGeoKey;
+  const srs_of_geotiff = await getSRS(geotiff);
   if (debugLevel >= 2) console.log("[geotiff-read-bbox] srs_of_geotiff:", srs_of_geotiff);
 
   // convert bbox to spatial reference system of the geotiff
@@ -99,4 +108,4 @@ module.exports = async ({ bbox, debugLevel = 0, geotiff, srs, use_overview = fal
   if (debugLevel >= 3) console.log("[geotiff-read-bbox] data:", data);
   if (debugLevel >= 1) console.timeEnd("[geotiff-read-bbox]");
   return { data, srs_of_geotiff, read_bbox, height: data.height, width: data.width, read_window, selected_image_index };
-};
+}

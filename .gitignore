@@ -105,3 +105,6 @@ dist
 
 pnpm-lock.yaml
 package-lock.json
+index.cjs
+data/*tif*
+data/*cog*
