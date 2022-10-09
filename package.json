@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "format": "npx prettier --arrow-parens=avoid --print-width=120 --trailing-comma=none --write *.js",
-    "test": "node test.js"
+    "test": "node test.mjs"
   },
   "repository": {
     "type": "git",
@@ -33,11 +33,11 @@
   },
   "homepage": "https://github.com/GeoTIFF/geotiff-read-bbox#readme",
   "devDependencies": {
-    "flug": "^2.1.0",
-    "geotiff": "^1.0.8"
+    "flug": "^2.3.1",
+    "geotiff": "^2.0.5"
   },
   "dependencies": {
-    "reproject-bbox": "^0.1.0",
-    "snap-bbox": "^0.2.0"
+    "reproject-bbox": "^0.4.1",
+    "snap-bbox": "^0.3.0"
   }
 }
