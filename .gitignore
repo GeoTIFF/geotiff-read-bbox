@@ -108,3 +108,4 @@ package-lock.json
 index.cjs
 data/*tif*
 data/*cog*
+.DS_Store
