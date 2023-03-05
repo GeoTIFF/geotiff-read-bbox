@@ -26,6 +26,10 @@ const result = await readBoundingBox({
   // set debugLevel to zero for no logging, and higher for more logging
   debugLevel: 1,
 
+  // how many points to add to each side of the bounding box if reprojecting
+  // optional, default is 100
+  density: 100,
+
   // spatial reference system of the bounding box
   srs: 4326,
 
