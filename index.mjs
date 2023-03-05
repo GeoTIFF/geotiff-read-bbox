@@ -5,6 +5,7 @@ import snap from "snap-bbox";
 export default async function ({
   bbox,
   debugLevel = 0,
+  density = 100,
   geotiff,
   srs,
   use_overview = false,
@@ -36,8 +37,12 @@ export default async function ({
   const srs_of_geotiff = await getSRS(geotiff);
   if (debugLevel >= 2) console.log("[geotiff-read-bbox] srs_of_geotiff:", srs_of_geotiff);
 
+  if (srs_of_geotiff === undefined) {
+    throw new Error("[geotiff-read-bbox] unable to parse SRS of geotiff");
+  }
+
   // convert bbox to spatial reference system of the geotiff
-  const bbox_in_raster_srs = reprojectBoundingBox({ bbox, from: srs, to: srs_of_geotiff });
+  const bbox_in_raster_srs = reprojectBoundingBox({ bbox, density, from: srs, to: srs_of_geotiff });
   if (debugLevel >= 2) console.log("[geotiff-read-bbox] bbox_in_raster_srs:", bbox_in_raster_srs);
 
   let { bbox_in_coordinate_system: read_bbox, bbox_in_grid_cells: read_window } = snap({
@@ -66,7 +71,11 @@ export default async function ({
 
     for (let i = 1; i < imageCount; i++) {
       const subimage = await geotiff.getImage(i);
-      selected_image_index = i;
+
+      if (subimage.fileDirectory.PhotometricInterpretation === 4) {
+        if (debugLevel >= 3) console.log(`[geotiff-read-bbox] ignoring image ${i} because it is a transparency mask`);
+        continue;
+      }
 
       const ratioX = subimage.getHeight() / imageHeight;
       if (debugLevel >= 3) console.log("[geotiff-read-bbox] ratioX:", ratioX);
@@ -81,6 +90,7 @@ export default async function ({
 
       if (subImageHeight >= target_height && subImageWidth >= target_width) {
         selected_image = subimage;
+        selected_image_index = i;
 
         const subResolutionX = resolutionX / ratioX;
         const subResolutionY = resolutionY / ratioY;
@@ -107,5 +117,14 @@ export default async function ({
   if (debugLevel >= 2) console.timeEnd("[geotiff-read-bbox] reading rasters");
   if (debugLevel >= 3) console.log("[geotiff-read-bbox] data:", data);
   if (debugLevel >= 1) console.timeEnd("[geotiff-read-bbox]");
-  return { data, srs_of_geotiff, read_bbox, height: data.height, width: data.width, read_window, selected_image_index };
+  return {
+    data,
+    srs_of_geotiff,
+    read_bbox,
+    height: data.height,
+    width: data.width,
+    read_window,
+    selected_image,
+    selected_image_index
+  };
 }
