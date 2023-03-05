@@ -17,7 +17,7 @@
     "format": "npx prettier --arrow-parens=avoid --print-width=120 --trailing-comma=none --write *js",
     "prepublish": "npm run format && npm run build && npm test",
     "setup": "cd data && ./setup.sh",
-    "test": "node test.mjs"
+    "test": "TIME=true node test.mjs"
   },
   "repository": {
     "type": "git",
@@ -42,16 +42,17 @@
   },
   "homepage": "https://github.com/GeoTIFF/geotiff-read-bbox#readme",
   "devDependencies": {
-    "@babel/cli": "^7.19.3",
-    "@babel/core": "^7.19.6",
+    "@babel/cli": "^7.21.0",
+    "@babel/core": "^7.21.0",
     "@babel/plugin-proposal-export-namespace-from": "^7.18.9",
-    "@babel/plugin-transform-modules-commonjs": "^7.19.6",
-    "flug": "^2.3.1",
-    "geotiff": "^2.0.5"
+    "@babel/plugin-transform-modules-commonjs": "^7.21.2",
+    "flug": "^2.5.0",
+    "geotiff": "^2.0.7",
+    "write-image": "^0.2.0"
   },
   "dependencies": {
     "geotiff-epsg-code": "^0.2.0",
-    "reproject-bbox": "^0.4.2",
+    "reproject-bbox": "^0.9.0",
     "snap-bbox": "^0.3.0"
   }
 }
