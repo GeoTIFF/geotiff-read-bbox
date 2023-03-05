@@ -109,3 +109,4 @@ index.cjs
 data/*tif*
 data/*cog*
 .DS_Store
+test-output/*
