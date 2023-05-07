@@ -16,25 +16,31 @@ npm install geotiff-read-bbox
 const geotiff = require("geotiff");
 const readBoundingBox = require("geotiff-read-bbox");
 
-const url = "https://s3-us-west-2.amazonaws.com/planet-disaster-data/hurricane-harvey/SkySat_Freeport_s03_20170831T162740Z3.tif";
+const url = "https://maxar-ard-samples.s3.amazonaws.com/v3/australia_vineyards/50/213133231011/2019-10-07/10500100191CD200-visual.tif";
 const geotiff = await GeoTIFF.fromUrl(url);
 
 const result = await readBoundingBox({
-  // bounding box in [xmin, ymin, xmax, ymax] format
-  bbox: [-95.33935546875, 28.92163128242129, -95.3173828125, 28.940861769405547],
+  // bounding box in format [xmin, ymin, xmax, ymax]
+  // bbox for tile: https://a.tile.openstreetmap.org/11/1678/1229.png
+  bbox: [114.9609375, -34.016241889667015, 115.13671875, -33.87041555094183],
 
   // set debugLevel to zero for no logging, and higher for more logging
-  debugLevel: 1,
+  debugLevel: 0,
 
   // how many points to add to each side of the bounding box if reprojecting
   // optional, default is 100
   density: 100,
 
-  // spatial reference system of the bounding box
-  srs: 4326,
-
   // tiff object created by using the geotiff.js library
   geotiff,
+
+  // optional
+  // override srs of the source data
+  // useful if we can't parse srs from geotiff metdata
+  geotiff_srs: 32759,
+
+  // spatial reference system of the bounding box
+  srs: 4326,
 
   // default to false
   // whether it's okay to use a lower-resolution overview image
@@ -44,53 +50,62 @@ const result = await readBoundingBox({
   // sets the desired size of the clipped pixels
   // useful if you are trying to generate an image
   // at a resolution lower than that of the highest-resolution image 
-  target_height: 256,
-  target_width: 256
+  target_height: 512,
+  target_width: 512
 });
 ```
 result will look like the following
 ```javascript
 {
-  srs_of_geotiff: 32615,
+  // bounding box of the read result
+  bbox: [ 311386.71875, 6234160.15625, 327968.75, 6250664.0625 ],
 
-  // bounding box of read result
-  read_bbox: [ 271940.8, 3201512.8000000003, 274126.4, 3203687.2 ],
-
-  // actual bbox of pixels read from the GeoTIFF
-  // in [left, top, right, bottom]
-  // with top left corner as origin [0, 0]
-  read_window: [1938, 2517, 2280, 2177],
-
-  // index of tiff image used
-  // zero is raw/highest-resolution value
-  // 1 and higher are overviews
-  // with the highest being the lowest resolution 
-  selected_image_index: 4,
-
-  // height of read result in pixels
-  height: 2718,
-
-  // width of read result in pixels
-  width: 2732,
-
+  // clipped data (without warping)
   data: [
-    Uint8Array(7425576) [
+    Uint8Array(717405) [
       140, 141, 141, 141, 140, 139, 139, 140, 139, 139, 140, 140,
       140, 140, 141, 141, 143, 143, 142, 142, 142, 142, 142, 143,
       ... many more items
     ],
-    Uint8Array(7425576) [
+    Uint8Array(717405) [
       136, 136, 136, 136, 136, 135, 136, 137, 135, 135, 135, 136,
       135, 136, 137, 137, 139, 139, 138, 138, 137, 137, 137, 138,
       ... many more items
     ],
-    Uint8Array(7425576) [
+    Uint8Array(717405) [
       130, 131, 133, 133, 133, 132, 132, 133, 132, 132, 133, 134,
       133, 133, 134, 134, 136, 136, 135, 135, 135, 135, 134, 135,
       ... many more items
     ],
-    width: 2732,
-    height: 2718
-  ]
+    width: 849,
+    height: 845
+  ],
+
+  // 6-parameter geotransform for the read data
+  // https://gdal.org/tutorials/geotransforms_tut.html
+  geotransform: [ 311386.71875, 19.53125, 0, 6250664.0625, 0, -19.53125 ],
+
+  // height of result data in pixels
+  height: 845,
+
+  // instance of geotiff.js image
+  image: GeoTIFFImage,
+
+  // index of tiff image used
+  // zero is raw/highest-resolution value
+  // 1 and higher are overviews
+  // with the highest being the lowest resolution
+  index: 7,
+
+  // srs of the read data (same as geotiff)
+  srs: "EPSG:32750",
+
+  // width of result data in pixels
+  width: 849,
+
+  // actual bbox of pixels read from the GeoTIFF
+  // in [left, top, right, bottom]
+  // with top left corner as origin [0, 0]
+  window: [ -177, -538, 672, 307 ]
 }
 ```
