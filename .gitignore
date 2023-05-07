@@ -111,3 +111,4 @@ data/*cog*
 .DS_Store
 test-output/*
 *bak*
+*.geojson
