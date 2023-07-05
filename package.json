@@ -54,7 +54,7 @@
   "dependencies": {
     "bbox-fns": "^0.13.0",
     "geoaffine": "^0.2.0",
-    "geotiff-epsg-code": "^0.3.0",
+    "geotiff-epsg-code": "^0.3.1",
     "geotiff-geotransform": "^0.0.1",
     "proj4-fully-loaded": "^0.2.0",
     "proj4-merge": "^0.1.1",
