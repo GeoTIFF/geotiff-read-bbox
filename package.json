@@ -42,8 +42,8 @@
   },
   "homepage": "https://github.com/GeoTIFF/geotiff-read-bbox#readme",
   "devDependencies": {
-    "@babel/cli": "^7.22.6",
-    "@babel/core": "^7.22.6",
+    "@babel/cli": "^7.22.9",
+    "@babel/core": "^7.22.9",
     "@babel/plugin-proposal-export-namespace-from": "^7.18.9",
     "@babel/plugin-transform-modules-commonjs": "^7.22.5",
     "flug": "^2.6.0",
@@ -57,7 +57,6 @@
     "geotiff-epsg-code": "^0.3.1",
     "geotiff-geotransform": "^0.0.1",
     "proj4-fully-loaded": "^0.2.0",
-    "proj4-merge": "^0.1.1",
-    "snap-bbox": "^0.4.1"
+    "proj4-merge": "^0.1.1"
   }
 }
