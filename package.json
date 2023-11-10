@@ -42,17 +42,17 @@
   },
   "homepage": "https://github.com/GeoTIFF/geotiff-read-bbox#readme",
   "devDependencies": {
-    "@babel/cli": "^7.22.9",
-    "@babel/core": "^7.22.9",
+    "@babel/cli": "^7.23.0",
+    "@babel/core": "^7.23.3",
     "@babel/plugin-proposal-export-namespace-from": "^7.18.9",
-    "@babel/plugin-transform-modules-commonjs": "^7.22.5",
+    "@babel/plugin-transform-modules-commonjs": "^7.23.3",
     "flug": "^2.6.0",
-    "geotiff": "^2.0.7",
+    "geotiff": "^2.1.0",
     "geotiff-precise-bbox": "^0.2.0",
     "write-image": "^0.2.0"
   },
   "dependencies": {
-    "bbox-fns": "^0.13.0",
+    "bbox-fns": "^0.17.0",
     "geoaffine": "^0.2.0",
     "geotiff-epsg-code": "^0.3.1",
     "geotiff-geotransform": "^0.0.1",

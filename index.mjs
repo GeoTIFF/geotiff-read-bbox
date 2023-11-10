@@ -9,10 +9,6 @@ import collect_proj4 from "proj4-collect";
 
 import Geotransform from "geoaffine/Geotransform.js";
 
-if (typeof merge !== "function") {
-  console.warn("[geotiff-read-bbox] failed to import proj4-merge");
-}
-
 // convert ij bbox to read window used by geotiff.js
 export function snap_to_read_window([xmin, ymin, xmax, ymax]) {
   return [Math.floor(xmin), Math.floor(ymin), Math.ceil(xmax), Math.ceil(ymax)];
