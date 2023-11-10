@@ -5,8 +5,7 @@ import reproject from "bbox-fns/reproject.js";
 import scale from "bbox-fns/scale.js";
 import bboxSize from "bbox-fns/bbox-size.js";
 
-import proj4fullyloaded from "proj4-fully-loaded";
-import merge from "proj4-merge";
+import collect_proj4 from "proj4-collect";
 
 import Geotransform from "geoaffine/Geotransform.js";
 
@@ -17,17 +16,6 @@ if (typeof merge !== "function") {
 // convert ij bbox to read window used by geotiff.js
 export function snap_to_read_window([xmin, ymin, xmax, ymax]) {
   return [Math.floor(xmin), Math.floor(ymin), Math.ceil(xmax), Math.ceil(ymax)];
-}
-
-export function collect_proj4({ proj4: custom_proj4 }) {
-  return merge([
-    custom_proj4,
-    proj4fullyloaded,
-    typeof window === "object" && window.proj4,
-    typeof self === "object" && self.proj4,
-    typeof global === "object" && global.proj4,
-    typeof globalThis === "object" && globalThis.proj4
-  ]);
 }
 
 export default async function geotiff_read_bbox({
@@ -59,7 +47,7 @@ export default async function geotiff_read_bbox({
   if (!geotiff_srs) geotiff_srs = await getSRS(geotiff);
   if (debug_level >= 2) console.log("[geotiff-read-bbox] geotiff_srs:", geotiff_srs);
 
-  if ([undefined, null, 32767].includes(geotiff_srs)) {
+  if ([undefined, null, 32767].includes(geotiff_srs) && srs_of_bbox !== "simple") {
     throw new Error("[geotiff-read-bbox] unable to parse SRS of geotiff");
   }
   // normalize srs information
@@ -78,30 +66,42 @@ export default async function geotiff_read_bbox({
 
   if (debug_level >= 1) console.log("[geotiff-read-bbox] affine:", affine);
 
-  const proj4 = collect_proj4({ proj4: custom_proj4 });
+  const proj4 = collect_proj4([custom_proj4]);
   if (debug_level >= 1) console.log("[geotiff-read-bbox] proj4:", typeof proj4);
 
-  let convert_from_srs_of_bbox_to_px_of_geotiff;
-  let convert_from_px_of_geotiff_to_srs_of_bbox;
-  let convert_from_srs_of_geotiff_to_srs_of_bbox;
-  let convert_from_srs_of_bbox_to_srs_of_geotiff;
-  if (geotiff_srs === srs_of_bbox) {
-    if (debug_level >= 2) console.log("[geotiff-read-bbox] srs of geotiff and bbox are the same!");
-    convert_from_srs_of_geotiff_to_srs_of_bbox = pt => pt;
-    convert_from_srs_of_bbox_to_srs_of_geotiff = pt => pt;
-    convert_from_srs_of_bbox_to_px_of_geotiff = xy => affine.inverse(xy);
-    convert_from_px_of_geotiff_to_srs_of_bbox = ij => affine.forward(ij);
+  let bbox_in_base_image_coords;
+  if (srs_of_bbox === "simple") {
+    const [xmin, ymin, xmax, ymax] = bbox;
+
+    bbox_in_base_image_coords = [
+      xmin,
+      image.getHeight() - ymax, // how many pixels from top of geotiff,
+      xmax,
+      image.getHeight() - ymin // how many pixels from top of geotiff
+    ];
   } else {
-    if (!proj4.defs[geotiff_srs]) throw new Error("[geotiff-read-bbox] unrecognized srs: " + geotiff_srs);
-    if (!proj4.defs[srs_of_bbox]) throw new Error("[geotiff-read-bbox] unrecognized srs: " + srs_of_bbox);
-    ({ forward: convert_from_srs_of_geotiff_to_srs_of_bbox, inverse: convert_from_srs_of_bbox_to_srs_of_geotiff } = proj4(geotiff_srs, srs_of_bbox));
-    convert_from_srs_of_bbox_to_px_of_geotiff = xy => affine.inverse(convert_from_srs_of_bbox_to_srs_of_geotiff(xy));
-    convert_from_px_of_geotiff_to_srs_of_bbox = ij => convert_from_srs_of_geotiff_to_srs_of_bbox(affine.forward(ij));
+    let convert_from_srs_of_bbox_to_px_of_geotiff;
+    let convert_from_px_of_geotiff_to_srs_of_bbox;
+    let convert_from_srs_of_geotiff_to_srs_of_bbox;
+    let convert_from_srs_of_bbox_to_srs_of_geotiff;
+    if (geotiff_srs === srs_of_bbox) {
+      if (debug_level >= 2) console.log("[geotiff-read-bbox] srs of geotiff and bbox are the same!");
+      convert_from_srs_of_geotiff_to_srs_of_bbox = pt => pt;
+      convert_from_srs_of_bbox_to_srs_of_geotiff = pt => pt;
+      convert_from_srs_of_bbox_to_px_of_geotiff = xy => affine.inverse(xy);
+      convert_from_px_of_geotiff_to_srs_of_bbox = ij => affine.forward(ij);
+    } else {
+      if (!proj4.defs[geotiff_srs]) throw new Error("[geotiff-read-bbox] unrecognized srs: " + geotiff_srs);
+      if (!proj4.defs[srs_of_bbox]) throw new Error("[geotiff-read-bbox] unrecognized srs: " + srs_of_bbox);
+      ({ forward: convert_from_srs_of_geotiff_to_srs_of_bbox, inverse: convert_from_srs_of_bbox_to_srs_of_geotiff } = proj4(geotiff_srs, srs_of_bbox));
+      convert_from_srs_of_bbox_to_px_of_geotiff = xy => affine.inverse(convert_from_srs_of_bbox_to_srs_of_geotiff(xy));
+      convert_from_px_of_geotiff_to_srs_of_bbox = ij => convert_from_srs_of_geotiff_to_srs_of_bbox(affine.forward(ij));
+    }
+
+    // convert bounding box in arbitrary spatial reference system to image coordinates in geotiff
+    bbox_in_base_image_coords = reproject(bbox, convert_from_srs_of_bbox_to_px_of_geotiff, { density });
   }
 
-  // conver bounding box in arbitrary spatial reference system
-  // to image coordinates in geotiff
-  const bbox_in_base_image_coords = reproject(bbox, convert_from_srs_of_bbox_to_px_of_geotiff, { density });
   if (debug_level >= 2) console.log("[geotiff-read-bbox] bbox_in_base_image_coords:", bbox_in_base_image_coords);
 
   // read window as used by geotiff.js

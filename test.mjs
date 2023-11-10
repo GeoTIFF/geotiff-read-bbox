@@ -230,3 +230,33 @@ test("example", async ({ eq }) => {
     window: [-177, -538, 672, 307]
   });
 });
+
+test("simple", async ({ eq }) => {
+  const geotiff = await GeoTIFF.fromFile("./data/vestfold.tif");
+  const result = await readBoundingBox({
+    bbox: [128, 656, 256, 784],
+    debugLevel: 0,
+    srs: "simple",
+    geotiff,
+    use_overview: true
+  });
+  eq(result.data.length, 1);
+  eq(result.data[0].length, 16384);
+  writeResult(result, "simple");
+});
+
+test("simple gadas", async ({ eq }) => {
+  const geotiff = await GeoTIFF.fromFile("./data/gadas.tif");
+  const height = 700;
+  const width = 690;
+  const result = await readBoundingBox({
+    bbox: [10, -75, 10 + width, -75 + height],
+    debugLevel: 0,
+    srs: "simple",
+    geotiff,
+    use_overview: true
+  });
+  eq(result.data.length, 4);
+  eq(result.data[0].length, width * height);
+  writeResult(result, "simple_gadas");
+});

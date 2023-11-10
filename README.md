@@ -1,17 +1,17 @@
 # geotiff-read-bbox
 Read Pixel Values from a GeoTIFF within a Bounding Box in almost any Projection
 
-# motivation
+## motivation
 Sometimes you want to display pixel values in a different projection
 than your GeoTIFF.  The most common use case is when you want to create an image
 for a web map tile in Web Mercator, but your GeoTIFF is not in Web Mercator.
 
-# install
+## install
 ```bash
 npm install geotiff-read-bbox
 ```
 
-# usage
+## basic usage
 ```javascript
 const geotiff = require("geotiff");
 const readBoundingBox = require("geotiff-read-bbox");
@@ -109,3 +109,15 @@ result will look like the following
   window: [ -177, -538, 672, 307 ]
 }
 ```
+
+## advanced usage
+### image coordinates
+You can request request specific pixels by using the "simple" spatial reference system, which is really no spatial reference system at all.  Technically, it's a non-spatial coordinate reference system where
+the bottom-left of the geotiff is [0, 0] and the top-right is [width, height].  This is inspired by Leaflet's [Simple CRS](https://leafletjs.com/examples/crs-simple/crs-simple.html).
+```js
+const result = await readBoundingBox({
+  bbox: [128, 656, 144, 672],
+  srs: "simple"
+});
+```
+
