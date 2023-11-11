@@ -249,8 +249,10 @@ test("simple gadas", async ({ eq }) => {
   const geotiff = await GeoTIFF.fromFile("./data/gadas.tif");
   const height = 700;
   const width = 690;
+  const bbox = [10, -75, 10 + width, -75 + height];
+  const image = await geotiff.getImage();
   const result = await readBoundingBox({
-    bbox: [10, -75, 10 + width, -75 + height],
+    bbox,
     debugLevel: 0,
     srs: "simple",
     geotiff,
@@ -258,5 +260,59 @@ test("simple gadas", async ({ eq }) => {
   });
   eq(result.data.length, 4);
   eq(result.data[0].length, width * height);
+  eq(result.srs, "EPSG:3857");
+  eq(result.bbox, [7723196.706839923, -20209.029905997682, 9410926.291376166, 1691980.4036814952]);
+  eq(result.window, [10, -150, 700, 550]);
+  eq(result.read_window, [10, 550, 700, -150]);
   writeResult(result, "simple_gadas");
+});
+
+test("simple gadas [256, 256, 512, 512]", async ({ eq }) => {
+  const geotiff = await GeoTIFF.fromFile("./data/gadas.tif");
+  const image = await geotiff.getImage();
+  const [xmin, ymin, xmax, ymax] = image.getBoundingBox();
+
+  const result = await readBoundingBox({
+    bbox: [256, 256, 512, 512],
+    debug_level: 10,
+    srs: "simple",
+    geotiff,
+    use_overview: true
+  });
+
+  eq(result.index, 0);
+  eq(result.height, 256);
+  eq(result.width, 256);
+  // image is only 475 pixels tall, so 512 is above top edge
+  eq(result.window, [256, -37, 512, 219]);
+  eq(result.bbox[0] > xmin, true);
+  eq(result.bbox[1] > ymin, true);
+  eq(result.bbox[2] > xmin, true);
+  eq(result.bbox[3] > ymax, true);
+  writeResult(result, "simple_gadas_2");
+});
+
+test("simple wildfires", async ({ eq }) => {
+  const geotiff = await GeoTIFF.fromFile("./data/wildfires.tiff");
+  const image = await geotiff.getImage();
+  console.log("image bbox:", image.getBoundingBox());
+
+  const height = 784;
+  const width = 1052;
+  // shifted left and up 50
+  const shift = 50;
+  const result = await readBoundingBox({
+    bbox: [-1 * shift, shift, width - shift, height + shift],
+    debug_level: 0,
+    srs: "simple",
+    geotiff,
+    use_overview: false
+  });
+
+  eq(result.index, 0);
+  eq(result.height, height);
+  eq(result.width, width);
+  eq(result.window, [-50, -50, 1002, 734]); // y-axis is flipped in image coordinates
+  eq(result.bbox, [-123.9609375, 39.07177734374999, -119.337890625, 42.51708984374999]);
+  writeResult(result, "simple_wildfires");
 });
