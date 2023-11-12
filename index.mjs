@@ -10,8 +10,9 @@ import collect_proj4 from "proj4-collect";
 import Geotransform from "geoaffine/Geotransform.js";
 
 // convert ij bbox to read window used by geotiff.js
-export function snap_to_read_window([xmin, ymin, xmax, ymax]) {
-  return [Math.floor(xmin), Math.floor(ymin), Math.ceil(xmax), Math.ceil(ymax)];
+export function snap_to_read_window([xmin, ymin, xmax, ymax], padding) {
+  const [padX, padY] = padding || [0, 0];
+  return [Math.floor(xmin) - padX, Math.floor(ymin) - padY, Math.ceil(xmax) + padX, Math.ceil(ymax) + padY];
 }
 
 export default async function geotiff_read_bbox({
@@ -20,13 +21,17 @@ export default async function geotiff_read_bbox({
   density = 100,
   geotiff,
   geotiff_srs,
+  padding,
   proj4: custom_proj4,
   srs: srs_of_bbox,
   use_overview = false,
   target_height,
   target_width
 }) {
-  if (debug_level >= 1) console.log("[geotiff-read-bbox]");
+  if (debug_level >= 1) console.log("[geotiff-read-bbox] starting");
+
+  if (geotiff === null) throw new Error("[geotiff-read-bbox] geotiff is null");
+  if (geotiff === undefined) throw new Error("[geotiff-read-bbox] geotiff is undefined");
 
   const start_get_image = performance.now();
   const image = await geotiff.getImage();
@@ -87,8 +92,9 @@ export default async function geotiff_read_bbox({
       convert_from_srs_of_bbox_to_px_of_geotiff = xy => affine.inverse(xy);
       convert_from_px_of_geotiff_to_srs_of_bbox = ij => affine.forward(ij);
     } else {
-      if (!proj4.defs[geotiff_srs]) throw new Error("[geotiff-read-bbox] unrecognized srs: " + geotiff_srs);
-      if (!proj4.defs[srs_of_bbox]) throw new Error("[geotiff-read-bbox] unrecognized srs: " + srs_of_bbox);
+      // check if srs is in proj4 defs if not wkt nor proj4 string
+      if (!geotiff_srs.includes("[") && !geotiff_srs.includes("+") && !proj4.defs[geotiff_srs]) throw new Error("[geotiff-read-bbox] unrecognized srs: " + geotiff_srs);
+      if (!srs_of_bbox.includes("[") && !srs_of_bbox.includes("+") && !proj4.defs[srs_of_bbox]) throw new Error("[geotiff-read-bbox] unrecognized srs: " + srs_of_bbox);
       ({ forward: convert_from_srs_of_geotiff_to_srs_of_bbox, inverse: convert_from_srs_of_bbox_to_srs_of_geotiff } = proj4(geotiff_srs, srs_of_bbox));
       convert_from_srs_of_bbox_to_px_of_geotiff = xy => affine.inverse(convert_from_srs_of_bbox_to_srs_of_geotiff(xy));
       convert_from_px_of_geotiff_to_srs_of_bbox = ij => convert_from_srs_of_geotiff_to_srs_of_bbox(affine.forward(ij));
@@ -101,7 +107,7 @@ export default async function geotiff_read_bbox({
   if (debug_level >= 2) console.log("[geotiff-read-bbox] bbox_in_base_image_coords:", bbox_in_base_image_coords);
 
   // read window as used by geotiff.js
-  let read_window = snap_to_read_window(bbox_in_base_image_coords);
+  let read_window = snap_to_read_window(bbox_in_base_image_coords, padding);
   if (debug_level >= 2) console.log("[geotiff-read-bbox] read_window:", read_window);
 
   let [read_width, read_height] = bboxSize(read_window);
@@ -145,7 +151,7 @@ export default async function geotiff_read_bbox({
       const bbox_in_subimage_coords = scale(bbox_in_base_image_coords, [ratioX, ratioY]);
       if (debug_level >= 3) console.log("[geotiff-read-bbox] bbox_in_subimage_coords:", bbox_in_subimage_coords);
 
-      const subimage_read_window = snap_to_read_window(bbox_in_subimage_coords);
+      const subimage_read_window = snap_to_read_window(bbox_in_subimage_coords, padding);
       if (debug_level >= 2) console.log("[geotiff-read-bbox] subimage_read_window:", subimage_read_window);
 
       // how many pixels we would clip from the current image
@@ -175,14 +181,15 @@ export default async function geotiff_read_bbox({
   }
   if (debug_level >= 3) console.log("[geotiff-read-bbox] data:", data);
 
-  const scaled_read_window = scale(
+  const unscaled_read_window = scale(
     selected.read_window,
     selected.ratio.map(n => 1 / n)
   );
-  const read_bbox = reproject(scaled_read_window, affine.forward, { density });
+
+  const read_bbox = reproject(unscaled_read_window, affine.forward, { density });
 
   // create geotransform equation for current data
-  const [scaled_left, scaled_top, scaled_right, scaled_bottom] = scaled_read_window;
+  const [scaled_left, scaled_top, scaled_right, scaled_bottom] = unscaled_read_window;
   const upper_left = [scaled_left, scaled_top];
   if (debug_level >= 3) console.log("[geotiff-read-bbox] upper_left:", upper_left);
   const [upper_left_x, upper_left_y] = affine.forward(upper_left);
@@ -196,13 +203,17 @@ export default async function geotiff_read_bbox({
     geotransform[5] / selected.ratio[1]
   ];
 
+  const simple_bbox = [unscaled_read_window[0], image_height - unscaled_read_window[3], unscaled_read_window[2], image_height - unscaled_read_window[1]];
+
   const result = {
+    base_window: unscaled_read_window,
     bbox: read_bbox,
     data,
     geotransform: read_geotransform,
     height: selected.read_height,
     index: selected.index,
     image: selected.image,
+    simple_bbox,
     srs: geotiff_srs,
     width: selected.read_width,
     window: selected.read_window

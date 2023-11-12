@@ -49,6 +49,7 @@
     "flug": "^2.6.0",
     "geotiff": "^2.1.0",
     "geotiff-precise-bbox": "^0.2.0",
+    "srvd": "^0.6.0",
     "write-image": "^0.2.0"
   },
   "dependencies": {

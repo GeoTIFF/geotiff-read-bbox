@@ -3,6 +3,7 @@ import test from "flug";
 import * as GeoTIFF from "geotiff";
 import Geotransform from "geoaffine/Geotransform.js";
 import getPreciseBoundingBox from "geotiff-precise-bbox";
+import srvd from "srvd";
 import writeImage from "write-image";
 import { default as readBoundingBox, snap_to_read_window } from "./index.mjs";
 
@@ -70,7 +71,8 @@ test("no overviews", async ({ eq }) => {
 });
 
 test("url", async ({ eq }) => {
-  const url = "https://geoblaze.s3.amazonaws.com/wildfires.tiff";
+  const { port, server } = srvd.serve();
+  const url = `http://localhost:${port}/data/wildfires.tiff`;
   const geotiff = await GeoTIFF.fromUrl(url);
   const bbox = [-123.75, 39.909736234537185, -122.34375, 40.97989806962013];
   const result = await readBoundingBox({
@@ -88,6 +90,7 @@ test("url", async ({ eq }) => {
   eq(result.height, 245);
 
   writeResult(result, "wildfires");
+  await server.close();
 });
 
 test("utm", async ({ eq }) => {
@@ -162,10 +165,12 @@ test("skip transparency masks", async ({ eq }) => {
   delete result.data;
   delete result.image;
   eq(result, {
+    base_window: [2624, -320, 16128, 6144],
     bbox: [315644.53125, 6238281.25, 319765.625, 6240253.90625],
     geotransform: [315644.53125, 19.53125, 0, 6240253.90625, 0, -19.53125],
     height: 101,
     index: 7,
+    simple_bbox: [2624, 11264, 16128, 17728],
     srs: "EPSG:32750",
     width: 211,
     window: [41, -5, 252, 96]
@@ -194,10 +199,12 @@ test("eu_pasture.tiff", async ({ eq }) => {
   delete result.data;
   delete result.image;
   eq(result, {
+    base_window: [377, -111, 2538, 970],
     bbox: [-0.04222557813090688, -0.029977027635510467, 180.03012267186912, 90.0478612223645],
     geotransform: [-0.04222557813090688, 0.08332825, 0, 90.0478612223645, 0, -0.08332825],
     height: 1081,
     index: 0,
+    simple_bbox: [377, -332, 2538, 749],
     srs: "EPSG:4326",
     width: 2161,
     window: [377, -111, 2538, 970]
@@ -221,10 +228,12 @@ test("example", async ({ eq }) => {
   delete result.data;
   delete result.image;
   eq(result, {
+    base_window: [-11328, -34432, 43008, 19648],
     bbox: [311386.71875, 6234160.15625, 327968.75, 6250664.0625],
     geotransform: [311386.71875, 19.53125, 0, 6250664.0625, 0, -19.53125],
     height: 845,
     index: 7,
+    simple_bbox: [-11328, -2240, 43008, 51840],
     srs: "EPSG:32750",
     width: 849,
     window: [-177, -538, 672, 307]
@@ -315,4 +324,63 @@ test("simple wildfires", async ({ eq }) => {
   eq(result.window, [-50, -50, 1002, 734]); // y-axis is flipped in image coordinates
   eq(result.bbox, [-123.9609375, 39.07177734374999, -119.337890625, 42.51708984374999]);
   writeResult(result, "simple_wildfires");
+});
+
+test("base read pixel info", async ({ eq }) => {
+  const port = 8081;
+  const { server } = srvd.serve({ port });
+
+  const geotiff = await GeoTIFF.fromUrl(`http://localhost:${port}/data/vestfold.tif`);
+
+  const params = {
+    bbox: [128, 656, 144, 672],
+    debugLevel: 3,
+    srs: "simple",
+    geotiff,
+    use_overview: true,
+    target_height: 256,
+    target_width: 256
+  };
+
+  const result = await readBoundingBox(params);
+
+  eq(result.base_window, [128, 208, 144, 224]);
+  eq(result.bbox, [2305536, 488520, 2306048, 489032]);
+  eq(result.geotransform, [2305536, 32, 0, 489032, 0, -32]);
+  eq(result.height, 16);
+  eq(result.index, 0);
+  eq(result.width, 16);
+  eq(result.window, [128, 208, 144, 224]);
+
+  await server.close();
+});
+
+test("custom srs", async ({ eq }) => {
+  const geotiff = await GeoTIFF.fromUrl("https://maxar-ard-samples.s3.amazonaws.com/v3/australia_vineyards/50/213133231011/2019-10-07/10500100191CD200-visual.tif");
+
+  const result = await readBoundingBox({
+    // bbox for tile: https://a.tile.openstreetmap.org/11/1678/1229.png
+    bbox: [114.9609375, -34.016241889667015, 115.13671875, -33.87041555094183],
+    debugLevel: 0,
+    srs: `GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]`,
+    geotiff,
+    geotiff_srs: "+proj=utm +zone=50 +south +datum=WGS84 +units=m +no_defs +type=crs",
+    use_overview: true,
+    target_height: 512,
+    target_width: 512
+  });
+  writeResult(result, "example");
+  delete result.data;
+  delete result.image;
+  eq(result, {
+    base_window: [-11328, -34432, 43008, 19648],
+    bbox: [311386.71875, 6234160.15625, 327968.75, 6250664.0625],
+    geotransform: [311386.71875, 19.53125, 0, 6250664.0625, 0, -19.53125],
+    height: 845,
+    index: 7,
+    simple_bbox: [-11328, -2240, 43008, 51840],
+    srs: "+proj=utm +zone=50 +south +datum=WGS84 +units=m +no_defs +type=crs",
+    width: 849,
+    window: [-177, -538, 672, 307]
+  });
 });

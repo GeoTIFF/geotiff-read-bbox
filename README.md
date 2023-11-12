@@ -39,6 +39,12 @@ const result = await readBoundingBox({
   // useful if we can't parse srs from geotiff metdata
   geotiff_srs: 32759,
 
+  // optional
+  // how many extra pixels to read
+  // the following will read 1 extra pixel from left and 1 from right
+  // and 3 extra pixels from top and 3 extra from bottom
+  padding: [1, 3],
+
   // spatial reference system of the bounding box
   srs: 4326,
 
@@ -57,6 +63,12 @@ const result = await readBoundingBox({
 result will look like the following
 ```javascript
 {
+  // actual bbox in pixels of the GeoTIFF
+  // in [left, top, right, bottom]
+  // with top left corner as origin [0, 0]
+  // only different than window if using an overview
+  base_window: [-11328, -34432, 43008, 19648],
+
   // bounding box of the read result
   bbox: [ 311386.71875, 6234160.15625, 327968.75, 6250664.0625 ],
 
@@ -97,15 +109,22 @@ result will look like the following
   // with the highest being the lowest resolution
   index: 7,
 
+  // bounding box of results in "simple" CRS
+  // where bottom-left of the GeoTIFF is [0, 0]
+  // and the top-right is [geotiff_width, geotiff_height]
+  // inspired by https://leafletjs.com/examples/crs-simple/crs-simple.html
+  simple_bbox: [-11328, -2240, 43008, 51840],
+
   // srs of the read data (same as geotiff)
   srs: "EPSG:32750",
 
   // width of result data in pixels
   width: 849,
 
-  // actual bbox of pixels read from the GeoTIFF
+  // actual bbox of pixels read from the GeoTIFF image
   // in [left, top, right, bottom]
   // with top left corner as origin [0, 0]
+  // only different than base_window if using an overview
   window: [ -177, -538, 672, 307 ]
 }
 ```
@@ -121,3 +140,17 @@ const result = await readBoundingBox({
 });
 ```
 
+### custom projections
+You can use standard OGC Well-Known Text, Proj Strings, or even ESRI Well-Known Text for srs and geotiff_srs.
+```js
+await readBoundingBox({
+  srs: `GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]`,
+  geotiff_srs: "+proj=utm +zone=50 +south +datum=WGS84 +units=m +no_defs +type=crs",
+  ...rest
+});
+
+{
+  srs: "+proj=utm +zone=50 +south +datum=WGS84 +units=m +no_defs +type=crs",
+  // ...
+}
+```
