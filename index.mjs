@@ -3,6 +3,7 @@ import GT from "geotiff-geotransform";
 
 import reproject from "bbox-fns/reproject.js";
 import scale from "bbox-fns/scale.js";
+import bboxIntersect from "bbox-fns/intersect.js";
 import bboxSize from "bbox-fns/bbox-size.js";
 
 import collect_proj4 from "proj4-collect";
@@ -17,8 +18,10 @@ export function snap_to_read_window([xmin, ymin, xmax, ymax], padding) {
 
 export default async function geotiff_read_bbox({
   bbox,
+  clamp = false,
   debug_level = 0,
   density = 100,
+  fill_value,
   geotiff,
   geotiff_srs,
   padding,
@@ -101,7 +104,7 @@ export default async function geotiff_read_bbox({
     }
 
     // convert bounding box in arbitrary spatial reference system to image coordinates in geotiff
-    bbox_in_base_image_coords = reproject(bbox, convert_from_srs_of_bbox_to_px_of_geotiff, { density });
+    bbox_in_base_image_coords = reproject(bbox, convert_from_srs_of_bbox_to_px_of_geotiff, { density, nan_strategy: "skip" });
   }
 
   if (debug_level >= 2) console.log("[geotiff-read-bbox] bbox_in_base_image_coords:", bbox_in_base_image_coords);
@@ -115,6 +118,8 @@ export default async function geotiff_read_bbox({
 
   const selected = {
     image,
+    image_height,
+    image_width,
     index: 0,
     ratio: [1, 1],
     read_window,
@@ -161,6 +166,8 @@ export default async function geotiff_read_bbox({
 
       if (read_height >= target_height && read_width >= target_width) {
         selected.image = subimage;
+        selected.image_height = subimage.getHeight();
+        selected.image_width = subimage.getWidth();
         selected.index = i;
         selected.ratio = [ratioX, ratioY];
         selected.read_height = read_height;
@@ -174,7 +181,29 @@ export default async function geotiff_read_bbox({
   }
 
   const start_read_rasters = performance.now();
-  const data = await selected.image.readRasters({ window: selected.read_window });
+
+  let data;
+
+  const [left, top, right, bottom] = selected.read_window;
+
+  if (right <= 0 || bottom <= 0 || left >= selected.read_width || top >= selected.read_height) {
+    // totally outside raster, so skip geotiff.js
+    const depth = image.getSamplesPerPixel();
+    const read_area = selected.read_width * selected.read_height;
+    data = [];
+    for (let b = 0; b < depth; b++) data.push(new Array(read_area).fill(fill_value));
+  } else {
+    if (clamp) {
+      if (debug_level >= 2) console.log("[geotiff-read-bbox] clamping");
+      selected.read_window = bboxIntersect(selected.read_window, [0, 0, selected.image_width, selected.image_height]);
+      [read_width, read_height] = bboxSize(selected.read_window);
+      selected.read_height = read_height;
+      selected.read_width = read_width;
+    }
+
+    data = await selected.image.readRasters({ fillValue: fill_value, window: selected.read_window });
+  }
+
   const duration_read_rasters = performance.now() - start_read_rasters;
   if (debug_level >= 2) {
     console.log("[geotiff-read-bbox] reading rasters took " + duration_read_rasters.toFixed() + "ms");

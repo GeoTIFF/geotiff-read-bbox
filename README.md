@@ -24,8 +24,18 @@ const result = await readBoundingBox({
   // bbox for tile: https://a.tile.openstreetmap.org/11/1678/1229.png
   bbox: [114.9609375, -34.016241889667015, 115.13671875, -33.87041555094183],
 
+  // optional, default is false
+  // if bbox partially extends outside the geotiff,
+  // clamp the bbox to the edge of the geotiff.
+  // this avoids using the fill value.
+  clamp: true,
+
   // set debugLevel to zero for no logging, and higher for more logging
   debugLevel: 0,
+
+  // optional
+  // value to use for pixels outside the bounds of the geotiff
+  fill_value: NaN,
 
   // how many points to add to each side of the bounding box if reprojecting
   // optional, default is 100

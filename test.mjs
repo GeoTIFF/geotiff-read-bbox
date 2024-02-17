@@ -28,7 +28,7 @@ test("exact fit", async ({ eq }) => {
   const bbox = getBoundingBox(image).map(n => Number(n)); // [-123.7412109375, 38.85205078124999, -119.1181640625, 42.29736328124999]
   const result = await readBoundingBox({
     bbox,
-    debugLevel: 0,
+    debug_level: 0,
     srs: 4326,
     geotiff,
     use_overview: false
@@ -53,7 +53,7 @@ test("no overviews", async ({ eq }) => {
   const bbox = getBoundingBox(image);
   const result = await readBoundingBox({
     bbox,
-    debugLevel: 0,
+    debug_level: 0,
     srs: 32759,
     geotiff,
     target_height: Math.round(height / 2),
@@ -77,7 +77,7 @@ test("url", async ({ eq }) => {
   const bbox = [-123.75, 39.909736234537185, -122.34375, 40.97989806962013];
   const result = await readBoundingBox({
     bbox,
-    debugLevel: 0,
+    debug_level: 0,
     srs: 4326,
     geotiff
   });
@@ -99,7 +99,7 @@ test("utm", async ({ eq }) => {
   const bbox = [-95.33935546875, 28.92163128242129, -95.3173828125, 28.940861769405547];
   const result = await readBoundingBox({
     bbox,
-    debugLevel: 0,
+    debug_level: 0,
     srs: 4326,
     geotiff,
     use_overview: true,
@@ -131,7 +131,7 @@ test("non-standard srs metadata (esri)", async ({ eq }) => {
   const bbox = [80.068359375, 7.667441482726068, 80.947265625, 8.581021215641854];
   const result = await readBoundingBox({
     bbox,
-    debugLevel: 0,
+    debug_level: 0,
     srs: 4326,
     geotiff,
     use_overview: true,
@@ -154,7 +154,7 @@ test("skip transparency masks", async ({ eq }) => {
   const bbox = [12802284.9934276, -4026091.1538368035, 12807176.963237852, -4023811.776507525];
   const result = await readBoundingBox({
     bbox,
-    debugLevel: 0,
+    debug_level: 0,
     srs: 3857,
     geotiff,
     use_overview: true,
@@ -182,7 +182,7 @@ test("eu_pasture.tiff", async ({ eq }) => {
   const bbox = [0, 0, 180, 90]; // north-east quarter
   const result = await readBoundingBox({
     bbox,
-    debugLevel: 0,
+    debug_level: 0,
     srs: 4326,
     geotiff,
     use_overview: true,
@@ -217,7 +217,7 @@ test("example", async ({ eq }) => {
   const result = await readBoundingBox({
     // bbox for tile: https://a.tile.openstreetmap.org/11/1678/1229.png
     bbox: [114.9609375, -34.016241889667015, 115.13671875, -33.87041555094183],
-    debugLevel: 0,
+    debug_level: 0,
     srs: 4326,
     geotiff,
     use_overview: true,
@@ -244,7 +244,7 @@ test("simple", async ({ eq }) => {
   const geotiff = await GeoTIFF.fromFile("./data/vestfold.tif");
   const result = await readBoundingBox({
     bbox: [128, 656, 256, 784],
-    debugLevel: 0,
+    debug_level: 0,
     srs: "simple",
     geotiff,
     use_overview: true
@@ -262,7 +262,7 @@ test("simple gadas", async ({ eq }) => {
   const image = await geotiff.getImage();
   const result = await readBoundingBox({
     bbox,
-    debugLevel: 0,
+    debug_level: 0,
     srs: "simple",
     geotiff,
     use_overview: true
@@ -283,7 +283,7 @@ test("simple gadas [256, 256, 512, 512]", async ({ eq }) => {
 
   const result = await readBoundingBox({
     bbox: [256, 256, 512, 512],
-    debug_level: 10,
+    debug_level: 0,
     srs: "simple",
     geotiff,
     use_overview: true
@@ -303,8 +303,8 @@ test("simple gadas [256, 256, 512, 512]", async ({ eq }) => {
 
 test("simple wildfires", async ({ eq }) => {
   const geotiff = await GeoTIFF.fromFile("./data/wildfires.tiff");
-  const image = await geotiff.getImage();
-  console.log("image bbox:", image.getBoundingBox());
+  // const image = await geotiff.getImage();
+  // console.log("image bbox:", image.getBoundingBox());
 
   const height = 784;
   const width = 1052;
@@ -334,7 +334,7 @@ test("base read pixel info", async ({ eq }) => {
 
   const params = {
     bbox: [128, 656, 144, 672],
-    debugLevel: 3,
+    debug_level: 0,
     srs: "simple",
     geotiff,
     use_overview: true,
@@ -361,7 +361,7 @@ test("custom srs", async ({ eq }) => {
   const result = await readBoundingBox({
     // bbox for tile: https://a.tile.openstreetmap.org/11/1678/1229.png
     bbox: [114.9609375, -34.016241889667015, 115.13671875, -33.87041555094183],
-    debugLevel: 0,
+    debug_level: 0,
     srs: `GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]`,
     geotiff,
     geotiff_srs: "+proj=utm +zone=50 +south +datum=WGS84 +units=m +no_defs +type=crs",
@@ -383,4 +383,71 @@ test("custom srs", async ({ eq }) => {
     width: 849,
     window: [-177, -538, 672, 307]
   });
+});
+
+test("fillValue", async ({ eq }) => {
+  const port = 8081;
+  const { server } = srvd.serve({ port });
+
+  const geotiff = await GeoTIFF.fromUrl(`http://localhost:${port}/data/dom1_32_356_5699_1_nw_2020.tif`);
+
+  const params = {
+    bbox: [771302.1658543744, 6698253.225658281, 771306.9431686422, 6698258.002972547],
+    clamp: false,
+    debug_level: 0,
+    fill_value: NaN,
+    geotiff,
+    srs: "EPSG:3857",
+    use_overview: true,
+    target_height: 256,
+    target_width: 256
+  };
+
+  const result = await readBoundingBox(params);
+
+  eq(result.base_window, [23, -21, 27, -17]);
+  eq(result.bbox, [356023, 5700017, 356027, 5700021]);
+  eq(result.data.length, 1);
+  eq(Array.from(result.data[0]), [NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN]);
+  eq(result.geotransform, [356023, 1, 0, 5700021, 0, -1]);
+  eq(result.height, 4);
+  eq(result.index, 0);
+  eq(result.width, 4);
+  eq(result.window, [23, -21, 27, -17]);
+
+  await server.close();
+});
+
+test("clamp", async ({ eq }) => {
+  const port = 8081;
+  const { server } = srvd.serve({ port });
+
+  const geotiff = await GeoTIFF.fromUrl(`http://localhost:${port}/data/dom1_32_356_5699_1_nw_2020.tif`);
+
+  const params = {
+    bbox: [771265.3262627776, 6698176.788629993, 771402.4894539987, 6698269.944045576],
+    clamp: true,
+    debug_level: 0,
+    fillValue: NaN,
+    geotiff,
+    srs: "EPSG:3857",
+    use_overview: true,
+    target_height: 256,
+    target_width: 256
+  };
+
+  const result = await readBoundingBox(params);
+
+  eq(result.base_window, [0, 0, 87, 33]);
+  eq(result.bbox, [356000, 5699967, 356087, 5700000]);
+  eq(result.data.length, 1);
+  eq(result.data[0][0], 102.5);
+  eq(new Set(result.data[0]).size, 1321);
+  eq(result.geotransform, [356000, 1, 0, 5700000, 0, -1]);
+  eq(result.height, 33);
+  eq(result.index, 0);
+  eq(result.width, 87);
+  eq(result.window, [0, 0, 87, 33]);
+
+  await server.close();
 });
