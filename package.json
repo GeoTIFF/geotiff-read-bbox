@@ -1,6 +1,6 @@
 {
   "name": "geotiff-read-bbox",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Read Pixel Values from a GeoTIFF within a Bounding Box in almost any Projection",
   "type": "module",
   "main": "index.cjs",
