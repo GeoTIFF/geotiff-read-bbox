@@ -451,3 +451,37 @@ test("clamp", async ({ eq }) => {
 
   await server.close();
 });
+
+test("wildfires", async ({ eq }) => {
+  const port = 8081;
+  const { server } = srvd.serve({ port });
+
+  const geotiff = await GeoTIFF.fromUrl(`http://localhost:${port}/data/wildfires.tiff`);
+
+  const params = {
+    bbox: [-122.0361328125, 40.97989806962013, -121.9921875, 41.0130657870063],
+    clamp: true,
+    debug_level: 10,
+    // fillValue: NaN,
+    geotiff,
+    srs: 4326,
+    target_height: 512,
+    target_width: 512,
+    use_overview: true
+  };
+
+  const result = await readBoundingBox(params);
+
+  eq(result.base_window, [388, 292, 398, 300]);
+  eq(result.bbox, [-122.0361328125, 40.97900390624999, -121.9921875, 41.01416015624999]);
+  eq(result.data.length, 3);
+  eq(result.data[0][0], 79);
+  eq(new Set(result.data[0]).size, 56);
+  eq(result.geotransform, [-122.0361328125, 0.00439453125, 0, 41.01416015624999, 0, -0.00439453125]);
+  eq(result.height, 8);
+  eq(result.index, 0);
+  eq(result.width, 10);
+  eq(result.window, [388, 292, 398, 300]);
+
+  await server.close();
+});

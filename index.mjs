@@ -184,9 +184,10 @@ export default async function geotiff_read_bbox({
 
   let data;
 
+  if (debug_level >= 3) console.log("[geotiff-read-bbox] selected:", selected);
   const [left, top, right, bottom] = selected.read_window;
 
-  if (right <= 0 || bottom <= 0 || left >= selected.read_width || top >= selected.read_height) {
+  if (right <= 0 || bottom <= 0 || left >= selected.image_width || top >= selected.image_height) {
     // totally outside raster, so skip geotiff.js
     const depth = image.getSamplesPerPixel();
     const read_area = selected.read_width * selected.read_height;
@@ -200,7 +201,7 @@ export default async function geotiff_read_bbox({
       selected.read_height = read_height;
       selected.read_width = read_width;
     }
-
+    if (debug_level >= 2) console.log("[geotiff-read-bbox] reading ", selected.read_window);
     data = await selected.image.readRasters({ fillValue: fill_value, window: selected.read_window });
   }
 
