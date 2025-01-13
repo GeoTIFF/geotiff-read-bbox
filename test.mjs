@@ -485,3 +485,25 @@ test("wildfires", async ({ eq }) => {
 
   await server.close();
 });
+
+test("abort controller", async ({ eq }) => {
+  const geotiff = await GeoTIFF.fromFile("./data/wildfires.tiff");
+  const controller = new AbortController();
+  const { signal } = controller;
+  controller.abort();
+
+  const params = {
+    bbox: [-123.7412109375, 38.85205078124999, -119.1181640625, 42.29736328124999],
+    debug_level: 0,
+    srs: 4326,
+    geotiff,
+    signal
+  };
+
+  try {
+    await readBoundingBox(params);
+    throw new Error("AbortError was not thrown");
+  } catch (error) {
+    eq(error.message, "[geotiff-read-bbox] operation aborted");
+  }
+});
