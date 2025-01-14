@@ -67,7 +67,11 @@ const result = await readBoundingBox({
   // useful if you are trying to generate an image
   // at a resolution lower than that of the highest-resolution image 
   target_height: 512,
-  target_width: 512
+  target_width: 512,
+
+  // a signal from an AbortController instance,
+  // which is passed to geotiff.js
+  signal: abortController.signal
 });
 ```
 result will look like the following
