@@ -29,10 +29,12 @@ export default async function geotiff_read_bbox({
   srs: srs_of_bbox,
   use_overview = false,
   target_height,
-  target_width
+  target_width,
+  signal
 }) {
   if (debug_level >= 1) console.log("[geotiff-read-bbox] starting");
 
+  if (signal && signal.aborted) throw new Error("[geotiff-read-bbox] operation aborted");
   if (geotiff === null) throw new Error("[geotiff-read-bbox] geotiff is null");
   if (geotiff === undefined) throw new Error("[geotiff-read-bbox] geotiff is undefined");
 
@@ -202,7 +204,7 @@ export default async function geotiff_read_bbox({
       selected.read_width = read_width;
     }
     if (debug_level >= 2) console.log("[geotiff-read-bbox] reading ", selected.read_window);
-    data = await selected.image.readRasters({ fillValue: fill_value, window: selected.read_window });
+    data = await selected.image.readRasters({ fillValue: fill_value, window: selected.read_window, signal });
   }
 
   const duration_read_rasters = performance.now() - start_read_rasters;
